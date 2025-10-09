@@ -136,8 +136,7 @@ function QuizEditor({ onSave, initial, onCancel }) {
   };
 
   return (
-    <div className="bg-gray-800
- dark:bg-gray-800 dark:border-gray-700 border shadow p-4 rounded">
+    <div className="bg-gray-800 dark:bg-gray-800 dark:border-gray-700 border shadow p-4 rounded">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-lg font-semibold">{editing ? "Edit Quiz" : "Create Quiz"}</h3>
         <Small>Local only (localStorage)</Small>
@@ -154,8 +153,7 @@ function QuizEditor({ onSave, initial, onCancel }) {
       </div>
 
       {questions.map((q, qi) => (
-        <div key={q.id} className="border dark:border-gray-600 rounded p-3 mb-3 bg-gray-800
- dark:bg-gray-800">
+        <div key={q.id} className="border dark:border-gray-600 rounded p-3 mb-3 bg-gray-800 dark:bg-gray-800">
           <div className="flex items-center justify-between">
             <div className="font-medium">Question {qi + 1}</div>
             <button
@@ -221,52 +219,51 @@ function QuizEditor({ onSave, initial, onCancel }) {
 function QuizPlayer({ quiz, onExit, onFinish }) {
   const [index, setIndex] = useState(0);
   const [selected, setSelected] = useState({});
+  const [startTime] = useState(Date.now()); // store start time when quiz starts
 
-  const total = quiz.questions.length;
   const current = quiz.questions[index];
-  const progress = Math.round(((index + (selected[current.id] ? 1 : 0)) / total) * 100);
+  const total = quiz.questions.length;
 
   const select = (qid, oid) => setSelected((s) => ({ ...s, [qid]: oid }));
-
   const next = () => setIndex((i) => Math.min(i + 1, total - 1));
   const prev = () => setIndex((i) => Math.max(i - 1, 0));
 
   const submit = () => {
+    const endTime = Date.now();
+    const timeTakenSeconds = Math.floor((endTime - startTime) / 1000);
+
     const answers = quiz.questions.map((q) => ({
       questionId: q.id,
       selectedOptionId: selected[q.id],
       correctOptionId: q.correctOptionId,
     }));
-    const score = answers.reduce((acc, a) => (a.selectedOptionId === a.correctOptionId ? acc + 1 : acc), 0);
+
+    const score = answers.reduce(
+      (acc, a) => (a.selectedOptionId === a.correctOptionId ? acc + 1 : acc),
+      0
+    );
+
     onFinish({
       id: uid("att"),
       quizId: quiz.id,
       takenAt: new Date().toISOString(),
       score,
       total,
+      timeTakenSeconds,
       answers,
     });
   };
 
-  return (
-    <div className="bg-gray-800
- dark:bg-gray-800 border dark:border-gray-700 shadow rounded p-4">
-      <div className="flex items-center justify-between mb-3">
-        <div>
-          <h3 className="text-lg font-semibold">{quiz.title}</h3>
-          <Small>
-            Question {index + 1} / {total}
-          </Small>
-        </div>
-        <div className="w-48">
-          <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded overflow-hidden">
-            <div style={{ width: `${progress}%` }} className="h-full bg-green-500" />
-          </div>
-          <Small>{progress}%</Small>
-        </div>
-      </div>
+  if (!current) return <div>Loading question...</div>;
 
-      <div className="grid grid-cols-1 gap-2 mb-4">
+  return (
+    <div className="bg-gray-800 dark:bg-gray-800 border dark:border-gray-700 shadow rounded p-4">
+      <h3 className="text-lg font-semibold">{quiz.title}</h3>
+      <Small>
+        Question {index + 1} / {total}
+      </Small>
+
+      <div className="grid grid-cols-1 gap-2 my-4">
         {current.options.map((o) => (
           <button
             key={o.id}
@@ -280,33 +277,25 @@ function QuizPlayer({ quiz, onExit, onFinish }) {
         ))}
       </div>
 
-      <div className="flex items-center justify-between">
+      <div className="flex justify-between gap-2 mt-4">
         <div className="flex gap-2">
-          <button
-            onClick={prev}
-            disabled={index === 0}
-            className="px-3 py-1 border dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-700 active:scale-95 transition-all disabled:opacity-50"
-          >
+          <button onClick={prev} disabled={index === 0} className="px-3 py-1 border rounded">
             Prev
           </button>
-          <button
-            onClick={next}
-            disabled={index === total - 1}
-            className="px-3 py-1 border dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-700 active:scale-95 transition-all disabled:opacity-50"
-          >
+          <button onClick={next} disabled={index === total - 1} className="px-3 py-1 border rounded">
             Next
           </button>
         </div>
         <div className="flex gap-2">
           <button
             onClick={onExit}
-            className="px-3 py-1 border dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-700 active:scale-95 transition-all"
+            className="px-3 py-1 border rounded hover:bg-gray-100 dark:hover:bg-gray-700"
           >
             Exit
           </button>
           <button
             onClick={submit}
-            className="px-3 py-1 bg-green-600 dark:bg-green-500 text-white rounded hover:bg-green-700 dark:hover:bg-green-600 active:scale-95 transition-all"
+            className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 dark:hover:bg-green-600"
           >
             Submit
           </button>
@@ -318,14 +307,20 @@ function QuizPlayer({ quiz, onExit, onFinish }) {
 
 // -------------------- Quiz Review --------------------
 function QuizReview({ attempt, quiz, onClose }) {
+  const formatTime = (seconds) => {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    return [h, m, s].map((v) => String(v).padStart(2, "0")).join(":");
+  };
+
   return (
-    <div className="bg-gray-800
- dark:bg-gray-800 border dark:border-gray-700 shadow rounded p-4">
+    <div className="bg-gray-800 dark:bg-gray-800 border dark:border-gray-700 shadow rounded p-4">
       <div className="flex items-center justify-between mb-3">
         <div>
           <h3 className="text-lg font-semibold">Result — {quiz.title}</h3>
           <Small>
-            Score: {attempt.score} / {attempt.total}
+            Score: {attempt.score} / {attempt.total} — Time Taken: {formatTime(attempt.timeTakenSeconds)}
           </Small>
         </div>
         <div>
@@ -389,8 +384,6 @@ export default function App() {
   const [lastAttempt, setLastAttempt] = useState(null);
 
   const [dark] = useState(() => localStorage.getItem("theme") === "dark");
-  // I was trying to make a darkmode button but due to short time and 2 projects i leave it
-  // that's why you will se many areas dark mode code
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -449,80 +442,78 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100 p-4 transition-colors dark">
-    <Container>
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-2xl font-bold">Interactive Quiz Builder</h2>
-        
-      </div>
-
-      {mode === "list" && (
-        <div className="space-y-3">
-          <button
-            onClick={createNew}
-            className="px-4 py-2 bg-blue-600 dark:bg-blue-500 text-white rounded hover:bg-blue-700 dark:hover:bg-blue-600 active:scale-95 transition-all"
-          >
-            + Create New Quiz
-          </button>
-
-          {quizzesSorted.map((q) => (
-            <div
-              key={q.id}
-              className="border dark:border-gray-600 rounded p-3 flex items-center justify-between bg-gray-800
- dark:bg-gray-800"
-            >
-              <div>
-                <div className="font-medium">{q.title}</div>
-                <Small>{new Date(q.createdAt).toLocaleString()}</Small>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => handlePlayQuiz(q)}
-                  className="px-3 py-1 bg-green-600 dark:bg-green-500 text-white rounded hover:bg-green-700 dark:hover:bg-green-600 active:scale-95 transition-all"
-                >
-                  Play
-                </button>
-                <button
-                  onClick={() => handleEditQuiz(q)}
-                  className="px-3 py-1 border dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-700 active:scale-95 transition-all"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => handleDeleteQuiz(q.id)}
-                  className="px-3 py-1 text-red-600 rounded hover:bg-red-100 dark:hover:bg-red-900 active:scale-95 transition-all"
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
-          ))}
+      <Container>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-2xl font-bold">Interactive Quiz Builder</h2>
         </div>
-      )}
 
-      {(mode === "create" || mode === "edit") && (
-        <QuizEditor
-          initial={editingQuiz}
-          onSave={handleSaveQuiz}
-          onCancel={() => setMode("list")}
-        />
-      )}
+        {mode === "list" && (
+          <div className="space-y-3">
+            <button
+              onClick={createNew}
+              className="px-4 py-2 bg-blue-600 dark:bg-blue-500 text-white rounded hover:bg-blue-700 dark:hover:bg-blue-600 active:scale-95 transition-all"
+            >
+              + Create New Quiz
+            </button>
 
-      {mode === "play" && playingQuiz && (
-        <QuizPlayer
-          quiz={playingQuiz}
-          onExit={() => setMode("list")}
-          onFinish={handleFinishAttempt}
-        />
-      )}
+            {quizzesSorted.map((q) => (
+              <div
+                key={q.id}
+                className="border dark:border-gray-600 rounded p-3 flex items-center justify-between bg-gray-800 dark:bg-gray-800"
+              >
+                <div>
+                  <div className="font-medium">{q.title}</div>
+                  <Small>{new Date(q.createdAt).toLocaleString()}</Small>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handlePlayQuiz(q)}
+                    className="px-3 py-1 bg-green-600 dark:bg-green-500 text-white rounded hover:bg-green-700 dark:hover:bg-green-600 active:scale-95 transition-all"
+                  >
+                    Play
+                  </button>
+                  <button
+                    onClick={() => handleEditQuiz(q)}
+                    className="px-3 py-1 border dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-700 active:scale-95 transition-all"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleDeleteQuiz(q.id)}
+                    className="px-3 py-1 text-red-600 rounded hover:bg-red-100 dark:hover:bg-red-900 active:scale-95 transition-all"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
-      {mode === "review" && lastAttempt && (
-        <QuizReview
-          attempt={lastAttempt}
-          quiz={quizzes.find((q) => q.id === lastAttempt.quizId)}
-          onClose={() => setMode("list")}
-        />
-      )}
-    </Container>
+        {(mode === "create" || mode === "edit") && (
+          <QuizEditor
+            initial={editingQuiz}
+            onSave={handleSaveQuiz}
+            onCancel={() => setMode("list")}
+          />
+        )}
+
+        {mode === "play" && playingQuiz && (
+          <QuizPlayer
+            quiz={playingQuiz}
+            onExit={() => setMode("list")}
+            onFinish={handleFinishAttempt}
+          />
+        )}
+
+        {mode === "review" && lastAttempt && (
+          <QuizReview
+            attempt={lastAttempt}
+            quiz={quizzes.find((q) => q.id === lastAttempt.quizId)}
+            onClose={() => setMode("list")}
+          />
+        )}
+      </Container>
     </div>
   );
 }
