@@ -8,6 +8,7 @@ const STORAGE_KEYS = {
   ATTEMPTS: "iqb_attempts_v1",
 };
 
+// Sample quizzes with more questions
 const sampleQuizzes = () => [
   {
     id: uid("quiz"),
@@ -35,6 +36,39 @@ const sampleQuizzes = () => [
           { id: "o4", text: "Java" },
         ],
         correctOptionId: "o2",
+      },
+      {
+        id: uid("q"),
+        text: "What planet is known as the Red Planet?",
+        options: [
+          { id: "o1", text: "Earth" },
+          { id: "o2", text: "Mars" },
+          { id: "o3", text: "Jupiter" },
+          { id: "o4", text: "Venus" },
+        ],
+        correctOptionId: "o2",
+      },
+      {
+        id: uid("q"),
+        text: "Which gas do plants absorb from the atmosphere?",
+        options: [
+          { id: "o1", text: "Oxygen" },
+          { id: "o2", text: "Nitrogen" },
+          { id: "o3", text: "Carbon Dioxide" },
+          { id: "o4", text: "Hydrogen" },
+        ],
+        correctOptionId: "o3",
+      },
+      {
+        id: uid("q"),
+        text: "Who wrote 'Romeo and Juliet'?",
+        options: [
+          { id: "o1", text: "William Shakespeare" },
+          { id: "o2", text: "Charles Dickens" },
+          { id: "o3", text: "Mark Twain" },
+          { id: "o4", text: "Jane Austen" },
+        ],
+        correctOptionId: "o1",
       },
     ],
   },
@@ -68,7 +102,7 @@ const saveAttempts = (attempts) => {
   localStorage.setItem(STORAGE_KEYS.ATTEMPTS, JSON.stringify(attempts));
 };
 
-// -------------------- UI Pieces --------------------
+// -------------------- UI Components --------------------
 function Small({ children }) {
   return <small className="text-gray-500 dark:text-gray-400">{children}</small>;
 }
@@ -216,17 +250,17 @@ function QuizEditor({ onSave, initial, onCancel }) {
 }
 
 // -------------------- Quiz Player --------------------
-function QuizPlayer({ quiz, onExit, onFinish }) {
+function QuizPlayer({ quiz, onFinish }) {
   const [index, setIndex] = useState(0);
   const [selected, setSelected] = useState({});
-  const [startTime] = useState(Date.now()); // store start time when quiz starts
+  const [startTime] = useState(Date.now());
 
   const current = quiz.questions[index];
   const total = quiz.questions.length;
 
   const select = (qid, oid) => setSelected((s) => ({ ...s, [qid]: oid }));
   const next = () => setIndex((i) => Math.min(i + 1, total - 1));
-  const prev = () => setIndex((i) => Math.max(i - 1, 0));
+  const prev = () => setIndex((i) => Math.max(i, 0));
 
   const submit = () => {
     const endTime = Date.now();
@@ -254,8 +288,6 @@ function QuizPlayer({ quiz, onExit, onFinish }) {
     });
   };
 
-  if (!current) return <div>Loading question...</div>;
-
   return (
     <div className="bg-gray-800 dark:bg-gray-800 border dark:border-gray-700 shadow rounded p-4">
       <h3 className="text-lg font-semibold">{quiz.title}</h3>
@@ -263,7 +295,13 @@ function QuizPlayer({ quiz, onExit, onFinish }) {
         Question {index + 1} / {total}
       </Small>
 
-      <div className="grid grid-cols-1 gap-2 my-4">
+      {/* Question */}
+      <div className="mt-2 text-gray-100 dark:text-gray-100 font-medium">
+        {current.text}
+      </div>
+
+      {/* Options */}
+      <div className="text-gray-100 dark:text-gray-100 grid grid-cols-1 gap-2 my-4">
         {current.options.map((o) => (
           <button
             key={o.id}
@@ -277,6 +315,7 @@ function QuizPlayer({ quiz, onExit, onFinish }) {
         ))}
       </div>
 
+      {/* Navigation */}
       <div className="flex justify-between gap-2 mt-4">
         <div className="flex gap-2">
           <button onClick={prev} disabled={index === 0} className="px-3 py-1 border rounded">
@@ -286,13 +325,7 @@ function QuizPlayer({ quiz, onExit, onFinish }) {
             Next
           </button>
         </div>
-        <div className="flex gap-2">
-          <button
-            onClick={onExit}
-            className="px-3 py-1 border rounded hover:bg-gray-100 dark:hover:bg-gray-700"
-          >
-            Exit
-          </button>
+        <div>
           <button
             onClick={submit}
             className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 dark:hover:bg-green-600"
@@ -448,46 +481,80 @@ export default function App() {
         </div>
 
         {mode === "list" && (
-          <div className="space-y-3">
-            <button
-              onClick={createNew}
-              className="px-4 py-2 bg-blue-600 dark:bg-blue-500 text-white rounded hover:bg-blue-700 dark:hover:bg-blue-600 active:scale-95 transition-all"
-            >
-              + Create New Quiz
-            </button>
-
-            {quizzesSorted.map((q) => (
-              <div
-                key={q.id}
-                className="border dark:border-gray-600 rounded p-3 flex items-center justify-between bg-gray-800 dark:bg-gray-800"
+          <>
+            <div className="space-y-3">
+              <button
+                onClick={createNew}
+                className="px-4 py-2 bg-blue-600 dark:bg-blue-500 text-white rounded hover:bg-blue-700 dark:hover:bg-blue-600 active:scale-95 transition-all"
               >
-                <div>
-                  <div className="font-medium">{q.title}</div>
-                  <Small>{new Date(q.createdAt).toLocaleString()}</Small>
+                + Create New Quiz
+              </button>
+
+              {quizzesSorted.map((q) => (
+                <div
+                  key={q.id}
+                  className="border dark:border-gray-600 rounded p-3 flex items-center justify-between bg-gray-800 dark:bg-gray-800"
+                >
+                  <div>
+                    <div className="font-medium">{q.title}</div>
+                    <Small>{new Date(q.createdAt).toLocaleString()}</Small>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handlePlayQuiz(q)}
+                      className="px-3 py-1 bg-green-600 dark:bg-green-500 text-white rounded hover:bg-green-700 dark:hover:bg-green-600 active:scale-95 transition-all"
+                    >
+                      Play
+                    </button>
+                    <button
+                      onClick={() => handleEditQuiz(q)}
+                      className="px-3 py-1 border dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-700 active:scale-95 transition-all"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDeleteQuiz(q.id)}
+                      className="px-3 py-1 text-red-600 rounded hover:bg-red-100 dark:hover:bg-red-900 active:scale-95 transition-all"
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handlePlayQuiz(q)}
-                    className="px-3 py-1 bg-green-600 dark:bg-green-500 text-white rounded hover:bg-green-700 dark:hover:bg-green-600 active:scale-95 transition-all"
-                  >
-                    Play
-                  </button>
-                  <button
-                    onClick={() => handleEditQuiz(q)}
-                    className="px-3 py-1 border dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-700 active:scale-95 transition-all"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDeleteQuiz(q.id)}
-                    className="px-3 py-1 text-red-600 rounded hover:bg-red-100 dark:hover:bg-red-900 active:scale-95 transition-all"
-                  >
-                    Delete
-                  </button>
+              ))}
+            </div>
+
+            {/* Attempt History */}
+            {attempts.length > 0 && (
+              <div className="mt-6">
+                <h3 className="text-lg font-semibold mb-2">Attempt History</h3>
+                <div className="space-y-2">
+                  {attempts.map((att) => {
+                    const quiz = quizzes.find((q) => q.id === att.quizId);
+                    if (!quiz) return null;
+                    return (
+                      <div key={att.id} className="border dark:border-gray-600 rounded p-3 flex justify-between items-center">
+                        <div>
+                          <div className="font-medium">{quiz.title}</div>
+                          <Small>
+                            Score: {att.score} / {att.total} — Taken at: {new Date(att.takenAt).toLocaleString()}
+                          </Small>
+                        </div>
+                        <button
+                          className="px-3 py-1 border dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-700 active:scale-95 transition-all"
+                          onClick={() => {
+                            setLastAttempt(att);
+                            setMode("review");
+                          }}
+                        >
+                          Review
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
-            ))}
-          </div>
+            )}
+          </>
         )}
 
         {(mode === "create" || mode === "edit") && (
@@ -501,7 +568,6 @@ export default function App() {
         {mode === "play" && playingQuiz && (
           <QuizPlayer
             quiz={playingQuiz}
-            onExit={() => setMode("list")}
             onFinish={handleFinishAttempt}
           />
         )}
