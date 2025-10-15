@@ -16,7 +16,7 @@ All data is stored locally in the browser (`localStorage`).
 - ✅ Fully dark-themed UI  
 - ✅ Data is stored locally — no backend required  
 
-## [Live Demo link](https://quiz-builder-pi4gk1g1y-sauravkumar-987s-projects.vercel.app/)
+## [Live Demo link](https://quiz-builder-pink.vercel.app/)
 
 
 ---
